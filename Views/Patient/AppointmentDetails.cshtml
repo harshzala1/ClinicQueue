@@ -1,0 +1,133 @@
+@model ClinicQueue.Models.Appointment
+@{
+    ViewData["Title"] = "Appointment Details";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-calendar-alt me-2" style="color:var(--accent);"></i>Appointment Details</h1>
+        <p>
+            <a href="@Url.Action("Appointments", "Patient")" class="text-decoration-none">
+                <i class="fas fa-arrow-left me-1"></i>Back to Appointments
+            </a>
+        </p>
+    </div>
+
+    @if (Model != null)
+    {
+        <div class="row g-4">
+            <!-- Appointment Info -->
+            <div class="col-lg-6">
+                <div class="detail-card card">
+                    <div class="card-header"><i class="fas fa-info-circle me-2"></i>Appointment Information</div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">ID</div>
+                            <div class="col-7 fw-semibold">#@Model.Id</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">Date</div>
+                            <div class="col-7">@Model.AppointmentDate</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">Time Slot</div>
+                            <div class="col-7">@Model.TimeSlot</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">Status</div>
+                            <div class="col-7"><span class="badge-status badge-@(Model.Status ?? "scheduled")">@(Model.Status ?? "scheduled")</span></div>
+                        </div>
+                        @if (Model.QueueEntry != null)
+                        {
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">Token #</div>
+                                <div class="col-7"><span class="badge bg-dark">#@Model.QueueEntry.TokenNumber</span></div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-5 text-muted fw-semibold" style="font-size:.85rem;">Queue Status</div>
+                                <div class="col-7"><span class="badge-status badge-@(Model.QueueEntry.Status ?? "waiting")">@(Model.QueueEntry.Status ?? "waiting")</span></div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescription -->
+            <div class="col-lg-6">
+                <div class="detail-card card">
+                    <div class="card-header"><i class="fas fa-prescription me-2"></i>Prescription</div>
+                    <div class="card-body">
+                        @if (Model.Prescription != null && Model.Prescription.Medicines != null && Model.Prescription.Medicines.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th style="font-size:.75rem;">Medicine</th>
+                                            <th style="font-size:.75rem;">Dosage</th>
+                                            <th style="font-size:.75rem;">Duration</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var med in Model.Prescription.Medicines)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@med.Name</td>
+                                                <td>@med.Dosage</td>
+                                                <td>@med.Duration</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Prescription.Notes))
+                            {
+                                <div class="mt-2 p-2 bg-light rounded" style="font-size:.85rem;">
+                                    <strong>Notes:</strong> @Model.Prescription.Notes
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-prescription fa-2x mb-2 d-block" style="color:#cbd5e1;"></i>
+                                No prescription added yet
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report -->
+            <div class="col-lg-6">
+                <div class="detail-card card">
+                    <div class="card-header"><i class="fas fa-file-medical me-2"></i>Medical Report</div>
+                    <div class="card-body">
+                        @if (Model.Report != null)
+                        {
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.85rem;">Diagnosis</div>
+                                <div class="col-8 fw-semibold">@Model.Report.Diagnosis</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.85rem;">Tests</div>
+                                <div class="col-8">@(Model.Report.TestRecommended ?? "—")</div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.85rem;">Remarks</div>
+                                <div class="col-8">@(Model.Report.Remarks ?? "—")</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-file-medical fa-2x mb-2 d-block" style="color:#cbd5e1;"></i>
+                                No report added yet
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,91 @@
+@model List<ClinicQueue.Models.Appointment>
+@{
+    ViewData["Title"] = "My Appointments";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1><i class="fas fa-calendar-check me-2" style="color:var(--accent);"></i>My Appointments</h1>
+            <p>View all your scheduled appointments and queue tokens</p>
+        </div>
+        <a href="@Url.Action("BookAppointment", "Patient")" class="btn btn-primary"
+           style="border-radius:10px; background:var(--accent-gradient); border:none; font-weight:600;">
+            <i class="fas fa-plus me-1"></i>Book New
+        </a>
+    </div>
+
+    <div class="table-card card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-list me-2"></i>Appointments (@(Model?.Count ?? 0))</span>
+            <input type="text" id="apptSearch" class="search-input" placeholder="Search..."
+                   onkeyup="filterTable('apptSearch','apptTable')" />
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover" id="apptTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Time Slot</th>
+                                <th>Token #</th>
+                                <th>Queue Status</th>
+                                <th>Appointment Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int i = 1; }
+                            @foreach (var appt in Model)
+                            {
+                                <tr>
+                                    <td class="fw-semibold text-muted">@(i++)</td>
+                                    <td class="fw-semibold">@appt.AppointmentDate</td>
+                                    <td>@appt.TimeSlot</td>
+                                    <td>
+                                        @if (appt.QueueEntry != null)
+                                        {
+                                            <span class="badge bg-dark fw-bold">#@appt.QueueEntry.TokenNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (appt.QueueEntry != null)
+                                        {
+                                            <span class="badge-status badge-@(appt.QueueEntry.Status ?? "waiting")">@(appt.QueueEntry.Status ?? "waiting")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge-status badge-@(appt.Status ?? "scheduled")">@(appt.Status ?? "scheduled")</span></td>
+                                    <td>
+                                        <a href="@Url.Action("AppointmentDetails", "Patient", new { id = appt.Id })"
+                                           class="btn btn-sm btn-outline-primary btn-action">
+                                            <i class="fas fa-eye me-1"></i>Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times d-block"></i>
+                    <h5>No Appointments Found</h5>
+                    <p>You haven't booked any appointments yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

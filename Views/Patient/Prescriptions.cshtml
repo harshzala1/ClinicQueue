@@ -1,0 +1,72 @@
+@model List<ClinicQueue.Models.Prescription>
+@{
+    ViewData["Title"] = "My Prescriptions";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-prescription me-2" style="color:var(--accent);"></i>My Prescriptions</h1>
+        <p>View all prescriptions from your doctors</p>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-3">
+            @foreach (var rx in Model)
+            {
+                <div class="col-lg-6">
+                    <div class="detail-card card">
+                        <div class="card-header d-flex justify-content-between">
+                            <span><i class="fas fa-prescription-bottle-alt me-2"></i>Prescription #@rx.Id</span>
+                            <small class="text-muted">@(rx.CreatedAt?.ToString("MMM dd, yyyy") ?? "")</small>
+                        </div>
+                        <div class="card-body">
+                            @if (rx.Medicines != null && rx.Medicines.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-2">
+                                        <thead>
+                                            <tr>
+                                                <th style="font-size:.72rem;">MEDICINE</th>
+                                                <th style="font-size:.72rem;">DOSAGE</th>
+                                                <th style="font-size:.72rem;">DURATION</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var med in rx.Medicines)
+                                            {
+                                                <tr>
+                                                    <td class="fw-semibold">@med.Name</td>
+                                                    <td>@med.Dosage</td>
+                                                    <td>@med.Duration</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(rx.Notes))
+                            {
+                                <div class="p-2 bg-light rounded" style="font-size:.85rem;">
+                                    <i class="fas fa-sticky-note me-1 text-muted"></i><strong>Notes:</strong> @rx.Notes
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="table-card card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="fas fa-prescription-bottle fa-3x d-block" style="color:#cbd5e1;"></i>
+                    <h5 class="mt-3">No Prescriptions</h5>
+                    <p>Your doctors haven't added any prescriptions yet.</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>

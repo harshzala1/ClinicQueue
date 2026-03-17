@@ -1,0 +1,163 @@
+@model ClinicQueue.ViewModels.ReceptionistDashboardViewModel
+@{
+    ViewData["Title"] = "Receptionist Dashboard";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-tachometer-alt me-2" style="color:var(--accent);"></i>Queue Management</h1>
+        <p>Manage daily patient queue and update appointment statuses</p>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="detail-card card mb-4">
+        <div class="card-body py-3">
+            <form method="get" asp-action="Dashboard" class="d-flex align-items-end gap-3 flex-wrap">
+                <div>
+                    <label class="form-label fw-semibold mb-1" style="font-size:.8rem; color:var(--text-secondary);">SELECT DATE</label>
+                    <input type="date" name="date" value="@Model.SelectedDate" class="form-control"
+                           style="border-radius:10px; border:2px solid #e2e8f0; min-width:200px;" />
+                </div>
+                <button type="submit" class="btn btn-primary" style="border-radius:10px; background:var(--accent-gradient); border:none; font-weight:600; padding:.55rem 1.2rem;">
+                    <i class="fas fa-search me-1"></i>Load Queue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card purple">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueEntries.Count</div>
+                        <div class="stat-label">Total in Queue</div>
+                    </div>
+                    <div class="stat-icon purple"><i class="fas fa-list-ol"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card orange">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueEntries.Count(q => q.Status == "waiting")</div>
+                        <div class="stat-label">Waiting</div>
+                    </div>
+                    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card blue">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueEntries.Count(q => q.Status == "in_progress")</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fas fa-spinner"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card green">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueEntries.Count(q => q.Status == "done")</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Table -->
+    <div class="table-card card">
+        <div class="card-header">
+            <i class="fas fa-users me-2"></i>Queue for @Model.SelectedDate
+        </div>
+        <div class="card-body p-0">
+            @if (Model.QueueEntries.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Token #</th>
+                                <th>Patient</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var entry in Model.QueueEntries)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-dark fw-bold" style="font-size:.85rem;">#@entry.TokenNumber</span>
+                                    </td>
+                                    <td class="fw-semibold">@(entry.Appointment?.Patient?.Name ?? "—")</td>
+                                    <td>@(entry.Appointment?.Patient?.Phone ?? "—")</td>
+                                    <td><span class="badge-status badge-@(entry.Status ?? "waiting")">@(entry.Status ?? "waiting")</span></td>
+                                    <td>
+                                        @if (entry.Status == "waiting")
+                                        {
+                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@entry.Id" />
+                                                <input type="hidden" name="status" value="in-progress" />
+                                                <input type="hidden" name="date" value="@Model.SelectedDate" />
+                                                <button type="submit" class="btn btn-sm btn-info btn-action text-white me-1"
+                                                        onclick="return confirmAction('Start consultation for this patient?')">
+                                                    <i class="fas fa-play me-1"></i>Start
+                                                </button>
+                                            </form>
+                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@entry.Id" />
+                                                <input type="hidden" name="status" value="skipped" />
+                                                <input type="hidden" name="date" value="@Model.SelectedDate" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-action"
+                                                        onclick="return confirmAction('Skip this patient?')">
+                                                    <i class="fas fa-forward me-1"></i>Skip
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (entry.Status == "in_progress")
+                                        {
+                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@entry.Id" />
+                                                <input type="hidden" name="status" value="done" />
+                                                <input type="hidden" name="date" value="@Model.SelectedDate" />
+                                                <button type="submit" class="btn btn-sm btn-success btn-action"
+                                                        onclick="return confirmAction('Mark this patient as done?')">
+                                                    <i class="fas fa-check me-1"></i>Done
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted" style="font-size:.8rem;">No actions available</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-inbox d-block"></i>
+                    <h5>No Queue Entries</h5>
+                    <p>No patients are in the queue for @Model.SelectedDate.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

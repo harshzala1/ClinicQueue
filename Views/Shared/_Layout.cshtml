@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ClinicQueue</title>
+    <meta name="description" content="Clinic Queue Management System — manage appointments, queues, prescriptions and reports." />
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body>
+    @{
+        var role = Context.Session.GetString("UserRole") ?? "";
+        var userName = Context.Session.GetString("UserName") ?? "User";
+        var clinicName = Context.Session.GetString("ClinicName") ?? "Clinic";
+        var isLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("JwtToken"));
+    }
+
+    @if (isLoggedIn)
+    {
+        <!-- ── Sidebar ── -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <i class="fas fa-hospital-alt me-2"></i>
+                    <span>ClinicQueue</span>
+                </div>
+                <small class="text-muted d-block px-3 mt-1 clinic-code">@clinicName</small>
+            </div>
+
+            <ul class="sidebar-nav">
+                @if (role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    <li class="nav-label">Administration</li>
+                    <li><a href="@Url.Action("Dashboard", "Admin")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                }
+                @if (role.Equals("patient", StringComparison.OrdinalIgnoreCase))
+                {
+                    <li class="nav-label">Patient Menu</li>
+                    <li><a href="@Url.Action("Dashboard", "Patient")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                    <li><a href="@Url.Action("BookAppointment", "Patient")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "BookAppointment" ? "active" : "")"><i class="fas fa-calendar-plus"></i><span>Book Appointment</span></a></li>
+                    <li><a href="@Url.Action("Appointments", "Patient")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Appointments" ? "active" : "")"><i class="fas fa-calendar-check"></i><span>My Appointments</span></a></li>
+                    <li><a href="@Url.Action("Prescriptions", "Patient")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Prescriptions" ? "active" : "")"><i class="fas fa-prescription"></i><span>Prescriptions</span></a></li>
+                    <li><a href="@Url.Action("Reports", "Patient")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Reports" ? "active" : "")"><i class="fas fa-file-medical"></i><span>Reports</span></a></li>
+                }
+                @if (role.Equals("receptionist", StringComparison.OrdinalIgnoreCase))
+                {
+                    <li class="nav-label">Receptionist Menu</li>
+                    <li><a href="@Url.Action("Dashboard", "Receptionist")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Receptionist" ? "active" : "")"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                }
+                @if (role.Equals("doctor", StringComparison.OrdinalIgnoreCase))
+                {
+                    <li class="nav-label">Doctor Menu</li>
+                    <li><a href="@Url.Action("Dashboard", "Doctor")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Doctor" ? "active" : "")"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                }
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">@userName</span>
+                        <span class="user-role badge bg-light text-dark">@role.ToUpper()</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ── Main Content ── -->
+        <div class="main-content" id="mainContent">
+            <!-- Top Navbar -->
+            <nav class="top-navbar">
+                <button class="btn btn-link sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="navbar-right">
+                    <span class="me-3 text-muted d-none d-md-inline">
+                        <i class="fas fa-clock me-1"></i><span id="currentTime"></span>
+                    </span>
+                    <a href="@Url.Action("Logout", "Auth")" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Toast Notifications -->
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+        </div>
+    }
+    else
+    {
+        @RenderBody()
+    }
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

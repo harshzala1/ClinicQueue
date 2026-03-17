@@ -1,0 +1,154 @@
+@model ClinicQueue.ViewModels.PatientDashboardViewModel
+@{
+    ViewData["Title"] = "Patient Dashboard";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-tachometer-alt me-2" style="color:var(--accent);"></i>Patient Dashboard</h1>
+        <p>View your appointments and medical records</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-4">
+            <div class="stat-card purple">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.TotalAppointments</div>
+                        <div class="stat-label">Total Appointments</div>
+                    </div>
+                    <div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="stat-card green">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.TotalPrescriptions</div>
+                        <div class="stat-label">Prescriptions</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fas fa-prescription"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="stat-card blue">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.TotalReports</div>
+                        <div class="stat-label">Medical Reports</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fas fa-file-medical"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <a href="@Url.Action("BookAppointment", "Patient")" class="text-decoration-none">
+                <div class="stat-card orange" style="cursor:pointer;">
+                    <div class="text-center">
+                        <div class="stat-icon orange mx-auto mb-2"><i class="fas fa-calendar-plus"></i></div>
+                        <div class="fw-semibold" style="color:var(--text-primary);">Book Appointment</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="@Url.Action("Appointments", "Patient")" class="text-decoration-none">
+                <div class="stat-card blue" style="cursor:pointer;">
+                    <div class="text-center">
+                        <div class="stat-icon blue mx-auto mb-2"><i class="fas fa-list"></i></div>
+                        <div class="fw-semibold" style="color:var(--text-primary);">View Appointments</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="@Url.Action("Prescriptions", "Patient")" class="text-decoration-none">
+                <div class="stat-card green" style="cursor:pointer;">
+                    <div class="text-center">
+                        <div class="stat-icon green mx-auto mb-2"><i class="fas fa-prescription-bottle-alt"></i></div>
+                        <div class="fw-semibold" style="color:var(--text-primary);">My Prescriptions</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="@Url.Action("Reports", "Patient")" class="text-decoration-none">
+                <div class="stat-card purple" style="cursor:pointer;">
+                    <div class="text-center">
+                        <div class="stat-icon purple mx-auto mb-2"><i class="fas fa-notes-medical"></i></div>
+                        <div class="fw-semibold" style="color:var(--text-primary);">My Reports</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Appointments -->
+    <div class="table-card card">
+        <div class="card-header">
+            <i class="fas fa-history me-2"></i>Recent Appointments
+        </div>
+        <div class="card-body p-0">
+            @if (Model.Appointments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time Slot</th>
+                                <th>Token #</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appt in Model.Appointments.Take(5))
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@appt.AppointmentDate</td>
+                                    <td>@appt.TimeSlot</td>
+                                    <td>
+                                        @if (appt.QueueEntry != null)
+                                        {
+                                            <span class="badge bg-dark">#@appt.QueueEntry.TokenNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge-status badge-@(appt.Status ?? "scheduled")">@(appt.Status ?? "scheduled")</span></td>
+                                    <td>
+                                        <a href="@Url.Action("AppointmentDetails", "Patient", new { id = appt.Id })"
+                                           class="btn btn-sm btn-outline-primary btn-action">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times d-block"></i>
+                    <h5>No Appointments Yet</h5>
+                    <p>Book your first appointment to get started.</p>
+                    <a href="@Url.Action("BookAppointment", "Patient")" class="btn btn-primary" style="border-radius:10px;">
+                        <i class="fas fa-calendar-plus me-1"></i>Book Now
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

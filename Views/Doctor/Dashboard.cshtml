@@ -1,0 +1,283 @@
+@model ClinicQueue.ViewModels.DoctorDashboardViewModel
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-stethoscope me-2" style="color:var(--accent);"></i>Doctor Dashboard</h1>
+        <p>Today's patient queue — add prescriptions and reports</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card purple">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueItems.Count</div>
+                        <div class="stat-label">Total Patients</div>
+                    </div>
+                    <div class="stat-icon purple"><i class="fas fa-users"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card orange">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueItems.Count(q => q.Status == "waiting")</div>
+                        <div class="stat-label">Waiting</div>
+                    </div>
+                    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card blue">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueItems.Count(q => q.Status == "in_progress")</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fas fa-spinner"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card green">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">@Model.QueueItems.Count(q => q.Status == "done")</div>
+                        <div class="stat-label">Done</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Table -->
+    <div class="table-card card">
+        <div class="card-header">
+            <i class="fas fa-list-ol me-2"></i>Today's Queue (@DateTime.Today.ToString("MMM dd, yyyy"))
+        </div>
+        <div class="card-body p-0">
+            @if (Model.QueueItems.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Token #</th>
+                                <th>Patient</th>
+                                <th>Status</th>
+                                <th>Appointment ID</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.QueueItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-dark fw-bold" style="font-size:.85rem;">#@item.TokenNumber</span>
+                                    </td>
+                                    <td class="fw-semibold">@(item.PatientName ?? "—")</td>
+                                    <td><span class="badge-status badge-@(item.Status ?? "waiting")">@(item.Status ?? "waiting")</span></td>
+                                    <td class="text-muted">#@item.AppointmentId</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-success btn-action me-1"
+                                                data-bs-toggle="modal" data-bs-target="#prescriptionModal"
+                                                onclick="setPrescriptionData(@item.AppointmentId, '@(item.PatientName?.Replace("'", "\\'") ?? "")')">
+                                            <i class="fas fa-prescription me-1"></i>Rx
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary btn-action"
+                                                data-bs-toggle="modal" data-bs-target="#reportModal"
+                                                onclick="setReportData(@item.AppointmentId, '@(item.PatientName?.Replace("'", "\\'") ?? "")')">
+                                            <i class="fas fa-file-medical me-1"></i>Report
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-inbox d-block"></i>
+                    <h5>No Patients in Queue</h5>
+                    <p>There are no patients queued for today.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ── Prescription Modal ── -->
+<div class="modal fade" id="prescriptionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-prescription me-2"></i>Add Prescription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddPrescription" asp-controller="Doctor" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" id="rxAppointmentId" />
+                <input type="hidden" name="patientName" id="rxPatientName" />
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Patient: <strong id="rxPatientDisplay"></strong></p>
+
+                    <div id="medicineContainer">
+                        <div class="row g-2 mb-2 medicine-row">
+                            <div class="col-md-4">
+                                <label class="form-label">Medicine Name</label>
+                                <input type="text" class="form-control med-name" placeholder="e.g. Paracetamol" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Dosage</label>
+                                <input type="text" class="form-control med-dose" placeholder="e.g. 500mg" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Duration</label>
+                                <input type="text" class="form-control med-duration" placeholder="e.g. 5 days" required />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeMedicine(this)" style="border-radius:8px;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addMedicine()" style="border-radius:8px;">
+                        <i class="fas fa-plus me-1"></i>Add Medicine
+                    </button>
+
+                    <!-- Hidden fields to aggregate medicines for form submission -->
+                    <input type="hidden" name="medicineNames" id="hiddenMedNames" />
+                    <input type="hidden" name="medicineDosages" id="hiddenMedDosages" />
+                    <input type="hidden" name="medicineDurations" id="hiddenMedDurations" />
+
+                    <div>
+                        <label class="form-label">Notes <span class="text-muted">(optional)</span></label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Take after food" style="border-radius:10px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" onclick="collectMedicines()" style="border-radius:10px; font-weight:600;">
+                        <i class="fas fa-check me-1"></i>Save Prescription
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Report Modal ── -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-medical me-2"></i>Add Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddReport" asp-controller="Doctor" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" id="rptAppointmentId" />
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Patient: <strong id="rptPatientDisplay"></strong></p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Diagnosis</label>
+                        <input type="text" name="diagnosis" class="form-control" required placeholder="e.g. Viral Fever" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tests Recommended <span class="text-muted">(optional)</span></label>
+                        <input type="text" name="testRecommended" class="form-control" placeholder="e.g. Blood Test, X-Ray" />
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Remarks <span class="text-muted">(optional)</span></label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Rest for 3 days" style="border-radius:10px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="background:var(--accent-gradient); border:none; border-radius:10px; font-weight:600;">
+                        <i class="fas fa-check me-1"></i>Save Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Set prescription modal data
+    function setPrescriptionData(apptId, patientName) {
+        document.getElementById('rxAppointmentId').value = apptId;
+        document.getElementById('rxPatientName').value = patientName;
+        document.getElementById('rxPatientDisplay').textContent = patientName;
+    }
+
+    // Set report modal data
+    function setReportData(apptId, patientName) {
+        document.getElementById('rptAppointmentId').value = apptId;
+        document.getElementById('rptPatientDisplay').textContent = patientName;
+    }
+
+    // Add new medicine row
+    function addMedicine() {
+        const container = document.getElementById('medicineContainer');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 medicine-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" class="form-control med-name" placeholder="Medicine name" required />
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control med-dose" placeholder="Dosage" required />
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control med-duration" placeholder="Duration" required />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeMedicine(this)" style="border-radius:8px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+        container.appendChild(row);
+    }
+
+    // Remove medicine row
+    function removeMedicine(btn) {
+        const rows = document.querySelectorAll('.medicine-row');
+        if (rows.length > 1) {
+            btn.closest('.medicine-row').remove();
+        }
+    }
+
+    // Collect medicines into hidden fields before form submission
+    function collectMedicines() {
+        const names = [], dosages = [], durations = [];
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            const name = row.querySelector('.med-name')?.value?.trim();
+            const dose = row.querySelector('.med-dose')?.value?.trim();
+            const dur = row.querySelector('.med-duration')?.value?.trim();
+            if (name) {
+                names.push(name);
+                dosages.push(dose || '');
+                durations.push(dur || '');
+            }
+        });
+        document.getElementById('hiddenMedNames').value = names.join(',');
+        document.getElementById('hiddenMedDosages').value = dosages.join(',');
+        document.getElementById('hiddenMedDurations').value = durations.join(',');
+    }
+</script>
+}

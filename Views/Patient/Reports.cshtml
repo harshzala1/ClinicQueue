@@ -1,0 +1,54 @@
+@model List<ClinicQueue.Models.Report>
+@{
+    ViewData["Title"] = "My Reports";
+}
+
+<div class="animate-fadeIn">
+    <div class="page-header">
+        <h1><i class="fas fa-file-medical me-2" style="color:var(--accent);"></i>My Reports</h1>
+        <p>View all medical reports from your appointments</p>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-3">
+            @foreach (var report in Model)
+            {
+                <div class="col-lg-6">
+                    <div class="detail-card card">
+                        <div class="card-header d-flex justify-content-between">
+                            <span><i class="fas fa-notes-medical me-2"></i>Report #@report.Id</span>
+                            <small class="text-muted">@(report.CreatedAt?.ToString("MMM dd, yyyy") ?? "")</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.82rem;">Diagnosis</div>
+                                <div class="col-8 fw-semibold">@report.Diagnosis</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.82rem;">Tests</div>
+                                <div class="col-8">@(report.TestRecommended ?? "—")</div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-4 text-muted fw-semibold" style="font-size:.82rem;">Remarks</div>
+                                <div class="col-8">@(report.Remarks ?? "—")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="table-card card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="fas fa-file-medical-alt fa-3x d-block" style="color:#cbd5e1;"></i>
+                    <h5 class="mt-3">No Reports</h5>
+                    <p>Your doctors haven't added any reports yet.</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
